@@ -22,6 +22,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@oslojs/crypto": "^1.0.1",
+    "@oslojs/encoding": "^1.1.0",
     "@prisma/client": "latest",
     "@radix-ui/react-alert-dialog": "latest",
     "@radix-ui/react-dialog": "latest",
@@ -35,6 +37,7 @@
     "@trpc/server": "latest",
     "@zxing/library": "latest",
     "arktype": "latest",
+    "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.454.0",

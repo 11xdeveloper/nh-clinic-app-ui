@@ -138,8 +138,8 @@ export default function PatientsPage() {
   const handleUpdatePatient = () => {
     if (!editingPatient) return;
     updatePatient.mutate({
-      id: editingPatient.id,
       ...formData,
+      id: editingPatient.id,
       dateLastVisited: new Date(),
     });
   };

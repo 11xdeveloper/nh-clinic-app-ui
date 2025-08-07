@@ -10,6 +10,29 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+enum Role {
+    ADMIN
+    VOLUNTEER
+}
+
+model User {
+    id       Int     @id @default(autoincrement())
+    name     String
+    email    String  @unique
+    password String
+    role     Role
+    verified Boolean
+
+    sessions Session[]
+}
+
+model Session {
+    id        String   @id
+    userId    Int
+    expiresAt DateTime
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 model Patient {
     id              String   @id
     cardNumber      Int      @default(autoincrement())

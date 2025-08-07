@@ -10,7 +10,7 @@ import {
   getCurrentSession,
 } from "@/lib/sessions";
 import { redirect } from "next/navigation";
-import { compare } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 
 export async function login(email: string, password: string) {
   const user = await db.user.findUnique({ where: { email } });
@@ -44,4 +44,33 @@ export async function logout() {
 
 export async function findPatient(patientId: string) {
   return await db.patient.findUnique({ where: { id: patientId } });
+}
+
+export async function signup(name: string, email: string, password: string, role: "ADMIN" | "VOLUNTEER") {
+  try {
+    // Check if user already exists
+    const existingUser = await db.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return { ok: false, message: "User with this email already exists" };
+    }
+
+    // Hash password
+    const hashedPassword = await hash(password, 12);
+
+    // Create user (unverified by default)
+    await db.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role,
+        verified: false,
+      },
+    });
+
+    return { ok: true, message: "Account created successfully" };
+  } catch (error) {
+    console.error("Signup error:", error);
+    return { ok: false, message: "Failed to create account" };
+  }
 }

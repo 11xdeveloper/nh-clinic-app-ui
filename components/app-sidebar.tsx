@@ -1,7 +1,7 @@
 "use client";
 
-import * as React from "react";
-import { User, Users, QrCode, LogOut, Shield, UserCheck } from "lucide-react";
+import type * as React from "react";
+import { User, Users, QrCode, LogOut, UserCheck, Activity } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -35,13 +35,18 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
 
   const generalPages = [
     {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: Activity,
+    },
+    {
       title: "Scan Patient",
-      url: "/scan",
+      url: "/dashboard/scan",
       icon: QrCode,
     },
     {
       title: "Patients",
-      url: "/patients",
+      url: "/dashboard/patients",
       icon: Users,
     },
   ];
@@ -60,10 +65,12 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
 
   return (
     <Sidebar {...props}>
-      <SidebarHeader className="border-sidebar-border flex items-center border-b">
-        <span className="text-xl font-semibold">
-          <span className="text-red-600">NH</span> Clinic
-        </span>
+      <SidebarHeader className="border-sidebar-border flex items-center border-b p-4">
+        <div className="flex items-center gap-3">
+          <span className="text-xl font-semibold">
+            <span className="text-red-600">NH</span> Clinic
+          </span>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>

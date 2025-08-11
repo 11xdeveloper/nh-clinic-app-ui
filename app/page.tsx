@@ -1,12 +1,12 @@
-import { getCurrentSession } from "@/lib/sessions";
-import { redirect } from "next/navigation";
+import { getCurrentSession } from "@/lib/sessions"
+import { redirect } from "next/navigation"
 
 export default async function HomePage() {
-  const { user } = await getCurrentSession();
+  const { user } = await getCurrentSession()
 
   if (user) {
-    redirect("/scan");
+    redirect("/dashboard")
   } else {
-    redirect("/login");
+    redirect("/login")
   }
 }

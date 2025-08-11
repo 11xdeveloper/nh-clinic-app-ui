@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 import { useState } from "react";
 import { Button } from "components/ui/button";
 import {
@@ -20,7 +22,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "components/ui/select";
-import { LogIn, UserPlus, Mail, Lock, User, Shield, Users, AlertCircle, CheckCircle } from 'lucide-react';
+import {
+  LogIn,
+  UserPlus,
+  Mail,
+  Lock,
+  User,
+  Shield,
+  Users,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { login, signup } from "lib/actions";
 
@@ -133,11 +145,15 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">NH Clinic</h1>
+          <div className="mb-2 flex items-center justify-center gap-3">
+            <h1 className="text-3xl font-bold text-gray-900">
+              <span className="text-red-600">NH</span> Clinic
+            </h1>
+          </div>
           <p className="text-gray-600">Patient Management System</p>
         </div>
 
@@ -168,7 +184,7 @@ export default function AuthPage() {
                   <div className="space-y-2">
                     <Label htmlFor="login-email">Email</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                      <Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                       <Input
                         id="login-email"
                         type="email"
@@ -186,7 +202,7 @@ export default function AuthPage() {
                   <div className="space-y-2">
                     <Label htmlFor="login-password">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                      <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                       <Input
                         id="login-password"
                         type="password"
@@ -204,11 +220,7 @@ export default function AuthPage() {
                     </div>
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoading}
-                  >
+                  <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
@@ -220,7 +232,7 @@ export default function AuthPage() {
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                      <User className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                       <Input
                         id="signup-name"
                         type="text"
@@ -238,14 +250,17 @@ export default function AuthPage() {
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                      <Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                       <Input
                         id="signup-email"
                         type="email"
                         placeholder="Enter your email"
                         value={signupData.email}
                         onChange={(e) =>
-                          setSignupData({ ...signupData, email: e.target.value })
+                          setSignupData({
+                            ...signupData,
+                            email: e.target.value,
+                          })
                         }
                         className="pl-10"
                         required
@@ -284,7 +299,7 @@ export default function AuthPage() {
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                      <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                       <Input
                         id="signup-password"
                         type="password"
@@ -307,7 +322,7 @@ export default function AuthPage() {
                       Confirm Password
                     </Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                      <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                       <Input
                         id="signup-confirm-password"
                         type="password"
@@ -325,17 +340,13 @@ export default function AuthPage() {
                     </div>
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoading}
-                  >
+                  <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Creating account..." : "Create Account"}
                   </Button>
                 </form>
 
-                <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
-                  <p className="font-medium text-blue-800 mb-1">
+                <div className="rounded-lg bg-blue-50 p-3 text-sm text-gray-600">
+                  <p className="mb-1 font-medium text-blue-800">
                     Account Verification Required
                   </p>
                   <p>
@@ -363,16 +374,6 @@ export default function AuthPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* Footer */}
-        <div className="text-center text-sm text-gray-600">
-          <p>
-            Need help?{" "}
-            <Link href="/contact" className="text-blue-600 hover:underline">
-              Contact support
-            </Link>
-          </p>
-        </div>
       </div>
     </div>
   );

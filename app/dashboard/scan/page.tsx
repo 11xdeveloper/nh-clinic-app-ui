@@ -391,12 +391,12 @@ export default function PatientCardSystem() {
         {!patient && (
           <Card className="border-blue-200 bg-blue-50">
             <CardContent>
-              <div className="text-center text-sm text-blue-800">
+              <div className="flex flex-col items-center text-sm text-blue-800">
                 <p className="mb-2 font-medium">How to use:</p>
-                <ul className="mx-auto max-w-md space-y-1 text-left">
-                  <li>• Click "Scan Patient Card" to activate camera</li>
-                  <li>• Position patient's barcode in camera view</li>
-                  <li>• Patient information will display automatically</li>
+                <ul className="mx-auto max-w-md list-disc space-y-1 text-left">
+                  <li>Click "Scan Patient Card" to activate camera</li>
+                  <li>Position patient's barcode in camera view</li>
+                  <li>Patient information will display automatically</li>
                 </ul>
               </div>
             </CardContent>

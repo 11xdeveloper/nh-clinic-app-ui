@@ -7,7 +7,7 @@ export default async function Layout({
   const { user } = await getCurrentSession();
 
   if (user) {
-    redirect("/scan");
+    redirect("/dashboard");
   }
 
   return <>{children}</>;

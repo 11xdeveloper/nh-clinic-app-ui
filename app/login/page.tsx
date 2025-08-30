@@ -1,224 +1,173 @@
-"use client";
+"use client"
 
-import type React from "react";
+import type React from "react"
 
-import { useState } from "react";
-import { Button } from "components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "components/ui/card";
-import { Input } from "components/ui/input";
-import { Label } from "components/ui/label";
-import { Alert, AlertDescription } from "components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "components/ui/select";
-import {
-  LogIn,
-  UserPlus,
-  Mail,
-  Lock,
-  User,
-  Shield,
-  Users,
-  AlertCircle,
-  CheckCircle,
-} from "lucide-react";
-import Link from "next/link";
-import { login, signup } from "lib/actions";
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AlertCircle, CheckCircle } from "lucide-react"
+import { login, signup } from "@/lib/actions"
 
-interface LoginFormData {
-  email: string;
-  password: string;
-}
+export default function LoginPage() {
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState("login")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
-interface SignupFormData {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  role: "ADMIN" | "VOLUNTEER";
-}
-
-export default function AuthPage() {
-  const [activeTab, setActiveTab] = useState("login");
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
-
-  const [loginData, setLoginData] = useState<LoginFormData>({
+  const [loginData, setLoginData] = useState({
     email: "",
     password: "",
-  });
+  })
 
-  const [signupData, setSignupData] = useState<SignupFormData>({
+  const [signupData, setSignupData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
     role: "VOLUNTEER",
-  });
+  })
+
+  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setLoginData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSignupChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setSignupData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleRoleChange = (value: string) => {
+    setSignupData((prev) => ({ ...prev, role: value }))
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setMessage(null);
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
 
     try {
-      const result = await login(loginData.email, loginData.password);
-      if (!result.ok) {
-        setMessage({ type: "error", text: result.message });
+      const result = await login(loginData)
+
+      if (result.error) {
+        setError(result.error)
+      } else {
+        router.push("/dashboard")
       }
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: "An unexpected error occurred. Please try again.",
-      });
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.")
+      console.error(err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setMessage(null);
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+    setSuccess(null)
 
-    // Validation
+    // Validate passwords match
     if (signupData.password !== signupData.confirmPassword) {
-      setMessage({ type: "error", text: "Passwords do not match" });
-      setIsLoading(false);
-      return;
+      setError("Passwords do not match")
+      setIsLoading(false)
+      return
     }
 
+    // Validate password length
     if (signupData.password.length < 6) {
-      setMessage({
-        type: "error",
-        text: "Password must be at least 6 characters long",
-      });
-      setIsLoading(false);
-      return;
+      setError("Password must be at least 6 characters")
+      setIsLoading(false)
+      return
     }
 
     try {
-      const result = await signup(
-        signupData.name,
-        signupData.email,
-        signupData.password,
-        signupData.role,
-      );
+      const result = await signup({
+        name: signupData.name,
+        email: signupData.email,
+        password: signupData.password,
+        role: signupData.role as "ADMIN" | "VOLUNTEER",
+      })
 
-      if (result.ok) {
-        setMessage({
-          type: "success",
-          text: "Account created successfully! Please wait for admin verification before you can log in.",
-        });
+      if (result.error) {
+        setError(result.error)
+      } else {
+        setSuccess("Account created successfully! Please wait for an admin to verify your account.")
         setSignupData({
           name: "",
           email: "",
           password: "",
           confirmPassword: "",
           role: "VOLUNTEER",
-        });
-      } else {
-        setMessage({ type: "error", text: result.message });
+        })
+        setTimeout(() => {
+          setActiveTab("login")
+        }, 3000)
       }
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: "An unexpected error occurred. Please try again.",
-      });
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.")
+      console.error(err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mb-2 flex items-center justify-center gap-3">
-            <h1 className="text-3xl font-bold text-gray-900">
-              <span className="text-red-600">NH</span> Clinic
-            </h1>
-          </div>
-          <p className="text-gray-600">Patient Management System</p>
-        </div>
-
-        {/* Auth Card */}
+    <div className="flex items-center justify-center min-h-screen bg-muted/40">
+      <div className="w-full max-w-md p-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-center">Welcome</CardTitle>
-            <CardDescription className="text-center">
-              Sign in to your account or create a new one
-            </CardDescription>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl text-center">NH Clinic</CardTitle>
+            <CardDescription className="text-center">Login or create an account to continue</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login" className="flex items-center gap-2">
-                  <LogIn className="h-4 w-4" />
-                  Sign In
-                </TabsTrigger>
-                <TabsTrigger value="signup" className="flex items-center gap-2">
-                  <UserPlus className="h-4 w-4" />
-                  Sign Up
-                </TabsTrigger>
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
 
-              {/* Sign In Tab */}
-              <TabsContent value="login" className="space-y-4">
-                <form onSubmit={handleLogin} className="space-y-4">
+              <TabsContent value="login">
+                <form onSubmit={handleLogin} className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="Enter your email"
-                        value={loginData.email}
-                        onChange={(e) =>
-                          setLoginData({ ...loginData, email: e.target.value })
-                        }
-                        className="pl-10"
-                        required
-                      />
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="m.smith@example.com"
+                      required
+                      value={loginData.email}
+                      onChange={handleLoginChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
                     </div>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      required
+                      value={loginData.password}
+                      onChange={handleLoginChange}
+                    />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      <Input
-                        id="login-password"
-                        type="password"
-                        placeholder="Enter your password"
-                        value={loginData.password}
-                        onChange={(e) =>
-                          setLoginData({
-                            ...loginData,
-                            password: e.target.value,
-                          })
-                        }
-                        className="pl-10"
-                        required
-                      />
+                  {error && (
+                    <div className="bg-destructive/10 text-destructive p-3 rounded-md flex items-center text-sm">
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      {error}
                     </div>
-                  </div>
+                  )}
 
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign In"}
@@ -226,155 +175,96 @@ export default function AuthPage() {
                 </form>
               </TabsContent>
 
-              {/* Sign Up Tab */}
-              <TabsContent value="signup" className="space-y-4">
-                <form onSubmit={handleSignup} className="space-y-4">
+              <TabsContent value="signup">
+                <form onSubmit={handleSignup} className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <div className="relative">
-                      <User className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="Enter your full name"
-                        value={signupData.name}
-                        onChange={(e) =>
-                          setSignupData({ ...signupData, name: e.target.value })
-                        }
-                        className="pl-10"
-                        required
-                      />
-                    </div>
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      placeholder="Michael Smith"
+                      required
+                      value={signupData.name}
+                      onChange={handleSignupChange}
+                    />
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="Enter your email"
-                        value={signupData.email}
-                        onChange={(e) =>
-                          setSignupData({
-                            ...signupData,
-                            email: e.target.value,
-                          })
-                        }
-                        className="pl-10"
-                        required
-                      />
-                    </div>
+                    <Input
+                      id="signup-email"
+                      name="email"
+                      type="email"
+                      placeholder="m.smith@example.com"
+                      required
+                      value={signupData.email}
+                      onChange={handleSignupChange}
+                    />
                   </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="signup-role">Role</Label>
-                    <Select
-                      value={signupData.role}
-                      onValueChange={(value: "ADMIN" | "VOLUNTEER") =>
-                        setSignupData({ ...signupData, role: value })
-                      }
-                    >
+                    <Label htmlFor="signup-password">Password</Label>
+                    <Input
+                      id="signup-password"
+                      name="password"
+                      type="password"
+                      required
+                      value={signupData.password}
+                      onChange={handleSignupChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">Confirm Password</Label>
+                    <Input
+                      id="confirm-password"
+                      name="confirmPassword"
+                      type="password"
+                      required
+                      value={signupData.confirmPassword}
+                      onChange={handleSignupChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Select value={signupData.role} onValueChange={handleRoleChange}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select your role" />
+                        <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="VOLUNTEER">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            Volunteer
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="ADMIN">
-                          <div className="flex items-center gap-2">
-                            <Shield className="h-4 w-4" />
-                            Admin
-                          </div>
-                        </SelectItem>
+                        <SelectItem value="ADMIN">Admin</SelectItem>
+                        <SelectItem value="VOLUNTEER">Volunteer</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        placeholder="Create a password"
-                        value={signupData.password}
-                        onChange={(e) =>
-                          setSignupData({
-                            ...signupData,
-                            password: e.target.value,
-                          })
-                        }
-                        className="pl-10"
-                        required
-                      />
+                  {error && (
+                    <div className="bg-destructive/10 text-destructive p-3 rounded-md flex items-center text-sm">
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      {error}
                     </div>
-                  </div>
+                  )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-confirm-password">
-                      Confirm Password
-                    </Label>
-                    <div className="relative">
-                      <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      <Input
-                        id="signup-confirm-password"
-                        type="password"
-                        placeholder="Confirm your password"
-                        value={signupData.confirmPassword}
-                        onChange={(e) =>
-                          setSignupData({
-                            ...signupData,
-                            confirmPassword: e.target.value,
-                          })
-                        }
-                        className="pl-10"
-                        required
-                      />
+                  {success && (
+                    <div className="bg-green-50 text-green-700 p-3 rounded-md flex items-center text-sm">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      {success}
                     </div>
-                  </div>
+                  )}
 
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Creating account..." : "Create Account"}
+                    {isLoading ? "Creating Account..." : "Create Account"}
                   </Button>
                 </form>
-
-                <div className="rounded-lg bg-blue-50 p-3 text-sm text-gray-600">
-                  <p className="mb-1 font-medium text-blue-800">
-                    Account Verification Required
-                  </p>
-                  <p>
-                    After creating your account, an admin must verify it before
-                    you can log in. You'll be notified once your account is
-                    approved.
-                  </p>
-                </div>
               </TabsContent>
             </Tabs>
-
-            {/* Messages */}
-            {message && (
-              <Alert
-                variant={message.type === "error" ? "destructive" : "default"}
-                className="mt-4"
-              >
-                {message.type === "error" ? (
-                  <AlertCircle className="h-4 w-4" />
-                ) : (
-                  <CheckCircle className="h-4 w-4" />
-                )}
-                <AlertDescription>{message.text}</AlertDescription>
-              </Alert>
-            )}
           </CardContent>
+          <CardFooter className="text-sm text-center text-muted-foreground">
+            {activeTab === "signup" && (
+              <p className="w-full">
+                After signing up, an admin will need to verify your account before you can log in.
+              </p>
+            )}
+          </CardFooter>
         </Card>
       </div>
     </div>
-  );
+  )
 }

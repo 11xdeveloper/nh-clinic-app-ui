@@ -1,34 +1,29 @@
-import z from "zod";
-import { createTRPCRouter, adminProcedure } from "../trpc";
+import { z } from "zod"
+import { createTRPCRouter, adminProcedure } from "../trpc"
 
 export const userRouter = createTRPCRouter({
-  getUnverified: adminProcedure.query(async ({ ctx: { db } }) => {
-    return await db.user.findMany({
-      where: { verified: false },
-      orderBy: { id: "desc" },
-    });
+  getAll: adminProcedure.query(async ({ ctx }) => {
+    return ctx.db.user.findMany({
+      orderBy: { createdAt: "desc" },
+    })
   }),
 
-  getAll: adminProcedure.query(async ({ ctx: { db } }) => {
-    return await db.user.findMany({
-      orderBy: { id: "desc" },
-    });
+  verify: adminProcedure.input(z.object({ userId: z.string() })).mutation(async ({ ctx, input }) => {
+    return ctx.db.user.update({
+      where: { id: input.userId },
+      data: { verified: true },
+    })
   }),
 
-  verify: adminProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ ctx: { db }, input: { id } }) => {
-      return await db.user.update({
-        where: { id },
-        data: { verified: true },
-      });
-    }),
+  delete: adminProcedure.input(z.object({ userId: z.string() })).mutation(async ({ ctx, input }) => {
+    // Delete all sessions for this user first
+    await ctx.db.session.deleteMany({
+      where: { userId: input.userId },
+    })
 
-  delete: adminProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ ctx: { db }, input: { id } }) => {
-      return await db.user.delete({
-        where: { id },
-      });
-    }),
-});
+    // Then delete the user
+    return ctx.db.user.delete({
+      where: { id: input.userId },
+    })
+  }),
+})

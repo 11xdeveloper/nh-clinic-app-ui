@@ -1,45 +1,39 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { env } from "./env";
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
-  if (request.method === "GET") {
-    const response = NextResponse.next();
-    const token = request.cookies.get("session")?.value ?? null;
+  const sessionToken = request.cookies.get("session_token")?.value
+  const { pathname } = request.nextUrl
 
-    if (token !== null) {
-      response.cookies.set("session", token, {
-        path: "/",
-        maxAge: 60 * 60 * 24 * 30,
-        sameSite: "lax",
-        httpOnly: true,
-        secure: env.NODE_ENV === "production",
-      });
-    }
+  // Public paths that don't require authentication
+  const publicPaths = ["/login"]
+  const isPublicPath = publicPaths.some((path) => pathname.startsWith(path))
 
-    return response;
+  // If no session and trying to access protected route
+  if (!sessionToken && !isPublicPath) {
+    const url = new URL("/login", request.url)
+    return NextResponse.redirect(url)
   }
 
-  const originHeader = request.headers.get("Origin");
-  // NOTE: You may need to use `X-Forwarded-Host` instead
-  const hostHeader = request.headers.get("Host");
-  if (originHeader === null || hostHeader === null) {
-    return new NextResponse(null, {
-      status: 403,
-    });
+  // If has session and trying to access login page
+  if (sessionToken && isPublicPath) {
+    const url = new URL("/dashboard", request.url)
+    return NextResponse.redirect(url)
   }
-  let origin: URL;
-  try {
-    origin = new URL(originHeader);
-  } catch {
-    return new NextResponse(null, {
-      status: 403,
-    });
-  }
-  if (origin.host !== hostHeader) {
-    return new NextResponse(null, {
-      status: 403,
-    });
-  }
-  return NextResponse.next();
+
+  return NextResponse.next()
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     * - api routes
+     */
+    "/((?!_next/static|_next/image|favicon.ico|public|api).*)",
+  ],
 }

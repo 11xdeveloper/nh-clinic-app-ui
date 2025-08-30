@@ -57,6 +57,7 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "trpc": "latest",
+    "uuid": "latest",
     "valibot": "latest",
     "zod": "^3.24.2"
   },

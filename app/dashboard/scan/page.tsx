@@ -1,408 +1,296 @@
-"use client";
+"use client"
 
-import { useState, useRef, useEffect } from "react";
-import { Button } from "components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "components/ui/card";
-import { Alert, AlertDescription } from "components/ui/alert";
-import { Badge } from "components/ui/badge";
-import { Separator } from "components/ui/separator";
-import {
-  Camera,
-  Square,
-  CheckCircle,
-  User,
-  Phone,
-  Calendar,
-  FileText,
-  CreditCard,
-  Hash,
-  AlertCircle,
-} from "lucide-react";
-import { BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
-import type { Patient } from "@prisma/client";
-import { findPatient } from "lib/actions";
+import type React from "react"
 
-const formatDate = (date: Date) => {
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
+import { useState, useEffect, useRef } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
+import { BrowserMultiFormatReader, type Result, BarcodeFormat } from "@zxing/library"
+import { Camera, X } from "lucide-react"
+import { api } from "@/trpc/react"
+import { useRouter } from "next/navigation"
 
-const daysSinceLastVisit = (date: Date) => {
-  const today = new Date();
-  const diffTime = Math.abs(today.getTime() - date.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-};
+export default function ScanPage() {
+  const [patientId, setPatientId] = useState("")
+  const [patientData, setPatientData] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isScanning, setIsScanning] = useState(false)
+  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([])
+  const [selectedCamera, setSelectedCamera] = useState<string | null>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null)
+  const router = useRouter()
 
-export default function PatientCardSystem() {
-  const [isScanning, setIsScanning] = useState(false);
-  const [scannedCode, setScannedCode] = useState<string>("");
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [error, setError] = useState<string>("");
-  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>(
-    [],
-  );
-  const [selectedCameraId, setSelectedCameraId] = useState<string>("");
-  const [showCameraSelection, setShowCameraSelection] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const codeReader = useRef<BrowserMultiFormatReader | null>(null);
+  const { data: patient, isLoading } = api.patient.getById.useQuery(
+    { id: patientId },
+    {
+      enabled: patientId.length > 0,
+      onSuccess: (data) => {
+        setPatientData(data)
+        setError(null)
+      },
+      onError: (err) => {
+        setPatientData(null)
+        setError(`Patient not found: ${err.message}`)
+      },
+    },
+  )
 
   useEffect(() => {
-    codeReader.current = new BrowserMultiFormatReader();
+    // Initialize the barcode reader
+    codeReaderRef.current = new BrowserMultiFormatReader()
 
     return () => {
-      if (codeReader.current) {
-        codeReader.current.reset();
+      // Clean up on unmount
+      if (codeReaderRef.current) {
+        codeReaderRef.current.reset()
       }
-    };
-  }, []);
-
-  useEffect(() => {
-    loadAvailableCameras();
-  }, []);
+    }
+  }, [])
 
   const loadAvailableCameras = async () => {
     try {
-      if (!codeReader.current) return;
+      // First request camera permissions
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
 
-      // First request camera permission
-      let stream: MediaStream | null = null;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      } catch (permissionError) {
-        console.error("Camera permission denied:", permissionError);
-        setError(
-          "Camera access denied. Please allow camera access and refresh the page.",
-        );
-        return;
-      }
+      // Stop the stream immediately, we just needed it for permissions
+      stream.getTracks().forEach((track) => track.stop())
 
-      // Now we can list the devices after permission is granted
-      const videoInputDevices =
-        await codeReader.current.listVideoInputDevices();
+      // Now list available devices
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = devices.filter((device) => device.kind === "videoinput")
 
-      // Stop the permission stream since we just needed it for permission
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
+      setAvailableCameras(videoDevices)
 
-      setAvailableCameras(videoInputDevices);
+      // Try to select the back camera by default (usually better for scanning)
+      const backCamera = videoDevices.find(
+        (device) => device.label.toLowerCase().includes("back") || device.label.toLowerCase().includes("rear"),
+      )
 
-      if (videoInputDevices.length > 1) {
-        setShowCameraSelection(true);
-        // Default to back camera if available, otherwise first camera
-        const backCamera = videoInputDevices.find(
-          (device) =>
-            device.label.toLowerCase().includes("back") ||
-            device.label.toLowerCase().includes("rear"),
-        );
-        setSelectedCameraId(
-          backCamera?.deviceId || videoInputDevices[0]!.deviceId,
-        );
-      } else if (videoInputDevices.length === 1) {
-        setSelectedCameraId(videoInputDevices[0]!.deviceId);
-        setShowCameraSelection(false);
-      } else {
-        setError("No camera devices found");
+      if (backCamera) {
+        setSelectedCamera(backCamera.deviceId)
+      } else if (videoDevices.length > 0) {
+        setSelectedCamera(videoDevices[0].deviceId)
       }
     } catch (err) {
-      console.error("Error loading cameras:", err);
-      setError(
-        "Failed to load camera devices. Please check your camera permissions.",
-      );
+      console.error("Error accessing camera:", err)
+      setError("Could not access camera. Please check permissions.")
     }
-  };
+  }
 
   const startScanning = async () => {
-    if (!codeReader.current || !videoRef.current) return;
+    if (!codeReaderRef.current) return
 
     try {
-      setError("");
-      setScannedCode("");
-      setPatient(null);
-      setIsScanning(true);
+      setIsScanning(true)
+      setError(null)
 
-      // Load cameras if not already loaded or if permission was previously denied
       if (availableCameras.length === 0) {
-        await loadAvailableCameras();
-        // If still no cameras after loading, return early
-        if (availableCameras.length === 0) {
-          setIsScanning(false);
-          return;
-        }
+        await loadAvailableCameras()
       }
 
-      const cameraId = selectedCameraId || availableCameras[0]?.deviceId;
+      if (selectedCamera && videoRef.current) {
+        const formats = [
+          BarcodeFormat.QR_CODE,
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.CODE_128,
+          BarcodeFormat.DATA_MATRIX,
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.UPC_E,
+          BarcodeFormat.EAN_8,
+        ]
 
-      if (!cameraId) {
-        throw new Error("No camera selected");
-      }
-
-      const result = await codeReader.current.decodeOnceFromVideoDevice(
-        cameraId,
-        videoRef.current,
-      );
-
-      const code = result.getText();
-      setScannedCode(code);
-
-      const foundPatient = await findPatient(code);
-      if (foundPatient) {
-        setPatient(foundPatient);
+        codeReaderRef.current.decodeFromVideoDevice(
+          selectedCamera,
+          videoRef.current,
+          (result: Result | null, error: any) => {
+            if (result) {
+              const scannedCode = result.getText()
+              setPatientId(scannedCode)
+              stopScanning()
+            }
+            if (error && !(error instanceof TypeError)) {
+              // Ignore TypeError as it's often just the scanner working
+              console.error("Scanning error:", error)
+            }
+          },
+        )
       } else {
-        setError(`No patient found with ID: ${code}`);
+        setError("No camera selected or available")
+        setIsScanning(false)
       }
-
-      setIsScanning(false);
     } catch (err) {
-      console.error("Scanning error:", err);
-      if (err instanceof NotFoundException) {
-        setError("No barcode found. Please try again.");
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Failed to access camera. Please check permissions.");
-      }
-      setIsScanning(false);
+      console.error("Error starting scanner:", err)
+      setError("Failed to start scanner. Please try again.")
+      setIsScanning(false)
     }
-  };
-
-  const handleCameraChange = (cameraId: string) => {
-    setSelectedCameraId(cameraId);
-    if (codeReader.current) {
-      codeReader.current.reset();
-    }
-  };
+  }
 
   const stopScanning = () => {
-    if (codeReader.current) {
-      codeReader.current.reset();
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset()
     }
-    setIsScanning(false);
-  };
+    setIsScanning(false)
+  }
 
-  const resetScanner = () => {
-    setScannedCode("");
-    setPatient(null);
-    setError("");
-    if (codeReader.current) {
-      codeReader.current.reset();
-    }
-  };
+  const handleCameraChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedCamera(e.target.value)
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffTime = Math.abs(now.getTime() - date.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    return `${date.toLocaleDateString()} (${diffDays} days ago)`
+  }
 
   return (
-    <div className="min-h-screen p-4">
-      <div className="mx-auto max-w-2xl space-y-6">
-        {/* Scanner Card */}
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-6">Patient Scanner</h1>
+
+      <div className="grid gap-6 md:grid-cols-2">
         <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center gap-2">
-              <Camera className="h-6 w-6" />
-              Scan Patient Card
-            </CardTitle>
-            <CardDescription>
-              Position the patient's barcode within the camera view
-            </CardDescription>
+          <CardHeader>
+            <CardTitle>Scan Patient Card</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Camera Video Element */}
-            <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
-              <video
-                ref={videoRef}
-                className="h-full w-full object-cover"
-                style={{ display: isScanning ? "block" : "none" }}
-              />
-              {!isScanning && !patient && (
-                <div className="flex h-full items-center justify-center">
-                  <Square className="h-16 w-16 text-gray-400" />
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex space-x-2">
+                <div className="flex-1">
+                  <Label htmlFor="patientId">Patient ID</Label>
+                  <div className="flex mt-1">
+                    <Input
+                      id="patientId"
+                      value={patientId}
+                      onChange={(e) => setPatientId(e.target.value)}
+                      placeholder="Enter or scan patient ID"
+                      className="flex-1"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={isScanning ? stopScanning : startScanning}
+                      className="ml-2 bg-transparent"
+                    >
+                      {isScanning ? <X className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
-              )}
-              {patient && (
-                <div className="flex h-full items-center justify-center bg-green-50">
-                  <CheckCircle className="h-16 w-16 text-green-500" />
-                </div>
-              )}
-            </div>
-
-            {/* Camera Selection */}
-            {showCameraSelection &&
-              availableCameras.length > 1 &&
-              !isScanning && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Select Camera:
-                  </label>
-                  <select
-                    value={selectedCameraId}
-                    onChange={(e) => handleCameraChange(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                  >
-                    {availableCameras.map((camera, index) => (
-                      <option key={camera.deviceId} value={camera.deviceId}>
-                        {camera.label || `Camera ${index + 1}`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-            {/* Control Buttons */}
-            <div className="flex gap-2">
-              {!isScanning && !patient && (
-                <Button onClick={startScanning} className="flex-1">
-                  <Camera className="mr-2 h-4 w-4" />
-                  Scan Patient Card
-                </Button>
-              )}
+              </div>
 
               {isScanning && (
-                <Button
-                  onClick={stopScanning}
-                  variant="destructive"
-                  className="flex-1"
-                >
-                  Stop Scanning
-                </Button>
+                <div className="mt-4 space-y-4">
+                  <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                    <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" />
+                    <div className="absolute inset-0 border-2 border-white/50 rounded-lg pointer-events-none"></div>
+                  </div>
+
+                  {availableCameras.length > 1 && (
+                    <div>
+                      <Label htmlFor="camera-select">Select Camera</Label>
+                      <select
+                        id="camera-select"
+                        value={selectedCamera || ""}
+                        onChange={handleCameraChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50"
+                      >
+                        {availableCameras.map((camera) => (
+                          <option key={camera.deviceId} value={camera.deviceId}>
+                            {camera.label || `Camera ${camera.deviceId.slice(0, 5)}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <Button onClick={stopScanning} variant="destructive" className="w-full">
+                    Cancel Scanning
+                  </Button>
+                </div>
               )}
 
-              {patient && (
-                <Button
-                  onClick={resetScanner}
-                  variant="outline"
-                  className="flex-1 bg-transparent"
-                >
-                  Scan Another Patient
-                </Button>
-              )}
+              {error && <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm">{error}</div>}
+
+              <Button onClick={() => router.push("/dashboard/patients")} variant="outline" className="w-full mt-2">
+                View All Patients
+              </Button>
             </div>
-
-            {/* Error Messages */}
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
           </CardContent>
         </Card>
 
-        {/* Patient Information Card */}
-        {patient && (
-          <Card className="border-green-200">
-            <CardHeader className="bg-green-50">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-green-800">
-                  <User className="h-5 w-5" />
-                  Patient Information
-                </CardTitle>
-                <Badge
-                  variant="secondary"
-                  className="bg-green-100 text-green-800"
-                >
-                  Active Patient
-                </Badge>
+        <Card>
+          <CardHeader>
+            <CardTitle>Patient Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-4">
+                <div className="h-6 bg-muted rounded animate-pulse"></div>
+                <div className="h-6 bg-muted rounded animate-pulse"></div>
+                <div className="h-6 bg-muted rounded animate-pulse"></div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-6">
-              {/* Patient Name and Basic Info */}
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            ) : patientData ? (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">{patientData.name}</h3>
+                  <Badge>{patientData.id}</Badge>
+                </div>
+
+                <Separator />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Card Number</p>
+                    <p>{patientData.cardNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Age</p>
+                    <p>{patientData.age} years</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Phone</p>
+                    <p>{patientData.phoneNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">CNIC</p>
+                    <p>{patientData.cnic}</p>
+                  </div>
+                </div>
+
+                <Separator />
+
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">
-                    {patient.name}
-                  </h3>
-                  <p className="text-gray-600">Age: {patient.age} years</p>
+                  <p className="text-sm text-muted-foreground">Last Visit</p>
+                  <p>{formatDate(patientData.lastVisitDate)}</p>
                 </div>
-                <div className="text-right md:text-left">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Hash className="h-4 w-4" />
-                    ID: {patient.id}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <CreditCard className="h-4 w-4" />
-                    Card: {patient.cardNumber}
-                  </div>
-                </div>
-              </div>
 
-              <Separator />
-
-              {/* Contact Information */}
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <div className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <Phone className="h-4 w-4" />
-                    Phone Number
-                  </div>
-                  <p className="text-gray-900">{patient.phoneNumber}</p>
+                  <p className="text-sm text-muted-foreground">Comments</p>
+                  <p className="whitespace-pre-wrap">{patientData.comments}</p>
                 </div>
-                <div>
-                  <div className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <CreditCard className="h-4 w-4" />
-                    CNIC
-                  </div>
-                  <p className="text-gray-900">{patient.cnic}</p>
+
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button variant="outline" onClick={() => router.push(`/dashboard/patients?edit=${patientData.id}`)}>
+                    Edit Patient
+                  </Button>
                 </div>
               </div>
-
-              <Separator />
-
-              {/* Visit Information */}
-              <div>
-                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <Calendar className="h-4 w-4" />
-                  Last Visit Information
-                </div>
-                <div className="rounded-lg bg-blue-50 p-3">
-                  <p className="font-medium text-blue-900">
-                    {formatDate(patient.dateLastVisited)}
-                  </p>
-                  <p className="text-sm text-blue-700">
-                    ({daysSinceLastVisit(patient.dateLastVisited)} days ago)
-                  </p>
-                </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  {patientId ? "No patient found with this ID" : "Scan or enter a patient ID to view their information"}
+                </p>
               </div>
-
-              {/* Comments */}
-              <div>
-                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <FileText className="h-4 w-4" />
-                  Medical Comments
-                </div>
-                <div className="rounded-lg bg-gray-50 p-3">
-                  <p className="text-sm leading-relaxed text-gray-800">
-                    {patient.comments}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Instructions */}
-        {!patient && (
-          <Card className="border-blue-200 bg-blue-50">
-            <CardContent>
-              <div className="flex flex-col items-center text-sm text-blue-800">
-                <p className="mb-2 font-medium">How to use:</p>
-                <ul className="mx-auto max-w-md list-disc space-y-1 text-left">
-                  <li>Click "Scan Patient Card" to activate camera</li>
-                  <li>Position patient's barcode in camera view</li>
-                  <li>Patient information will display automatically</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
+  )
 }

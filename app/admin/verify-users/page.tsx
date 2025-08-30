@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "components/ui/button";
+import { Button } from "../../../components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "components/ui/card";
+} from "../../../components/ui/card";
 import {
   Table,
   TableBody,
@@ -16,9 +16,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "components/ui/table";
-import { Badge } from "components/ui/badge";
-import { Alert, AlertDescription } from "components/ui/alert";
+} from "../../../components/ui/table";
+import { Badge } from "../../../components/ui/badge";
+import { Alert, AlertDescription } from "../../../components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,9 +29,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "components/ui/alert-dialog";
-import { Users, Shield, UserCheck, UserX, Mail, Calendar, AlertCircle, CheckCircle, Clock } from 'lucide-react';
-import { api } from "@/trpc/react";
+} from "../../../components/ui/alert-dialog";
+import {
+  Users,
+  Shield,
+  UserCheck,
+  UserX,
+  Mail,
+  Calendar,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+} from "lucide-react";
+import { api } from "../../../trpc/react";
 import type { User } from "@prisma/client";
 
 export default function VerifyUsersPage() {
@@ -41,9 +51,10 @@ export default function VerifyUsersPage() {
   } | null>(null);
 
   // tRPC queries and mutations
-  const { data: unverifiedUsers = [], refetch } = api.user.getUnverified.useQuery();
+  const { data: unverifiedUsers = [], refetch } =
+    api.user.getUnverified.useQuery();
   const { data: allUsers = [] } = api.user.getAll.useQuery();
-  
+
   const verifyUser = api.user.verify.useMutation({
     onSuccess: () => {
       refetch();
@@ -99,10 +110,12 @@ export default function VerifyUsersPage() {
   };
 
   const getRoleBadgeColor = (role: string) => {
-    return role === "ADMIN" ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800";
+    return role === "ADMIN"
+      ? "bg-red-100 text-red-800"
+      : "bg-blue-100 text-blue-800";
   };
 
-  const verifiedUsers = allUsers.filter(user => user.verified);
+  const verifiedUsers = allUsers.filter((user) => user.verified);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -110,7 +123,9 @@ export default function VerifyUsersPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              User Management
+            </h1>
             <p className="text-gray-600">
               Verify new user accounts and manage existing users
             </p>
@@ -155,7 +170,9 @@ export default function VerifyUsersPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Users</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Users
+                  </p>
                   <p className="text-2xl font-bold text-blue-600">
                     {allUsers.length}
                   </p>
@@ -168,9 +185,7 @@ export default function VerifyUsersPage() {
 
         {/* Messages */}
         {message && (
-          <Alert
-            variant={message.type === "error" ? "destructive" : "default"}
-          >
+          <Alert variant={message.type === "error" ? "destructive" : "default"}>
             {message.type === "error" ? (
               <AlertCircle className="h-4 w-4" />
             ) : (
@@ -268,11 +283,14 @@ export default function VerifyUsersPage() {
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Reject User</AlertDialogTitle>
+                                  <AlertDialogTitle>
+                                    Reject User
+                                  </AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Are you sure you want to reject {user.name}'s
-                                    account? This will permanently delete their
-                                    account and they will need to sign up again.
+                                    Are you sure you want to reject {user.name}
+                                    's account? This will permanently delete
+                                    their account and they will need to sign up
+                                    again.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -355,7 +373,10 @@ export default function VerifyUsersPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="bg-green-100 text-green-800">
+                          <Badge
+                            variant="secondary"
+                            className="bg-green-100 text-green-800"
+                          >
                             <CheckCircle className="mr-1 h-3 w-3" />
                             Verified
                           </Badge>

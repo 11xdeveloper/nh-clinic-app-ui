@@ -17,9 +17,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { logout } from "@/lib/actions";
+} from "./ui/sidebar";
+import { Button } from "./ui/button";
+import { logout } from "../lib/actions";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: {

@@ -56,7 +56,7 @@ import {
   Camera,
   X,
 } from "lucide-react";
-import { api } from "@/trpc/react";
+import { api } from "../../../trpc/react";
 import type { Patient } from "@prisma/client";
 
 interface PatientFormData {
@@ -83,7 +83,7 @@ export default function PatientsPage() {
   });
   const [isScanningBarcode, setIsScanningBarcode] = useState(false);
   const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>(
-    [],
+    []
   );
   const [selectedCamera, setSelectedCamera] = useState<string>("");
   const [scanError, setScanError] = useState<string>("");
@@ -160,7 +160,7 @@ export default function PatientsPage() {
       patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.cnic.includes(searchTerm) ||
-      patient.phoneNumber.includes(searchTerm),
+      patient.phoneNumber.includes(searchTerm)
   );
 
   const formatDate = (date: Date) => {
@@ -188,7 +188,7 @@ export default function PatientsPage() {
       // Then enumerate devices
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(
-        (device) => device.kind === "videoinput",
+        (device) => device.kind === "videoinput"
       );
       setAvailableCameras(videoDevices);
 
@@ -196,10 +196,10 @@ export default function PatientsPage() {
       const backCamera = videoDevices.find(
         (device) =>
           device.label.toLowerCase().includes("back") ||
-          device.label.toLowerCase().includes("rear"),
+          device.label.toLowerCase().includes("rear")
       );
       setSelectedCamera(
-        backCamera?.deviceId || videoDevices[0]?.deviceId || "",
+        backCamera?.deviceId || videoDevices[0]?.deviceId || ""
       );
     } catch (error) {
       console.error("Error accessing cameras:", error);
@@ -269,7 +269,7 @@ export default function PatientsPage() {
                 if (error && error.name !== "NotFoundException") {
                   console.error("Barcode scanning error:", error);
                 }
-              },
+              }
             );
           }
         } catch (error) {

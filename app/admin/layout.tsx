@@ -1,13 +1,13 @@
-import { getCurrentSession } from "@/lib/sessions";
+import { getCurrentSession } from "../../lib/sessions";
 import { Role } from "@prisma/client";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "../../components/app-sidebar";
 import {
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,
-} from "@/components/ui/sidebar";
+} from "../../components/ui/sidebar";
 
 export default async function AdminLayout({
   children,

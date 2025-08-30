@@ -19,7 +19,7 @@ import {
   Stethoscope,
 } from "lucide-react";
 import Link from "next/link";
-import { api } from "@/trpc/react";
+import { api } from "../../trpc/react";
 
 export default function DashboardPage() {
   const { data: patients = [] } = api.patient.getAll.useQuery();
@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const recentVisits = patients.filter((p) => {
     const daysSince = Math.ceil(
       (new Date().getTime() - new Date(p.dateLastVisited).getTime()) /
-        (1000 * 60 * 60 * 24),
+        (1000 * 60 * 60 * 24)
     );
     return daysSince <= 7;
   }).length;

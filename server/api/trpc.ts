@@ -11,7 +11,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "server/db";
-import { getCurrentSession } from "@/lib/sessions";
+import { getCurrentSession } from "../../lib/sessions";
 
 /**
  * 1. CONTEXT

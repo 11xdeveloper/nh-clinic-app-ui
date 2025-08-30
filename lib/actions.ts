@@ -8,7 +8,7 @@ import {
   deleteSessionTokenCookie,
   invalidateSession,
   getCurrentSession,
-} from "@/lib/sessions";
+} from "./sessions";
 import { redirect } from "next/navigation";
 import { compare, hash } from "bcryptjs";
 
@@ -71,7 +71,7 @@ export async function signup(
   name: string,
   email: string,
   password: string,
-  role: "ADMIN" | "VOLUNTEER",
+  role: "ADMIN" | "VOLUNTEER"
 ) {
   try {
     // Check if user already exists

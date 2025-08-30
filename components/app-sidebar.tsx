@@ -124,7 +124,9 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{user.name}</span>
                   <span className="text-muted-foreground text-xs">
-                    {user.email}
+                    {user.email.length < 30
+                      ? user.email
+                      : `${user.email.slice(0, 27)}...`}
                   </span>
                 </div>
               </div>

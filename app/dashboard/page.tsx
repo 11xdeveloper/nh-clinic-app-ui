@@ -200,11 +200,7 @@ export default function DashboardPage() {
             <CardContent>
               {recentPatients.length === 0 ? (
                 <div className="py-8 text-center">
-                  <img
-                    src="/assets/medical-pills.jpeg"
-                    alt="No patients"
-                    className="mx-auto mb-4 h-20 w-20 rounded-lg opacity-50"
-                  />
+                  <Users className="mx-auto h-12 w-12 text-gray-400" />
                   <p className="text-gray-500">No patients found</p>
                   <p className="mt-1 text-sm text-gray-400">
                     Start by scanning a patient card or adding a new patient

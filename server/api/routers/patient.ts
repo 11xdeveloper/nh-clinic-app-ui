@@ -59,4 +59,48 @@ export const patientRouter = createTRPCRouter({
         where: { id },
       });
     }),
+
+
+  // MY ADDITIONS - no changes to any previous code
+  recordVisit: authedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx: { db }, input: { id } }) => {
+      const patient = await db.patient.findUnique({ where: { id } });
+
+      if (!patient) throw new Error("Patient not found");
+      if (patient.isBlocked) throw new Error("Card is blocked. Verification required.");
+
+      const newVisitCount = patient.currentCycleVisits + 1;
+      const shouldBlock = newVisitCount >= 6;
+
+      return await db.$transaction([
+        db.visit.create({
+          data: {
+            patientId: id,
+            dateTime: new Date(),
+          },
+        }),
+        db.patient.update({
+          where: { id },
+          data: {
+            currentCycleVisits: newVisitCount,
+            isBlocked: shouldBlock,
+            dateLastVisited: new Date(),
+          },
+        }),
+      ]);
+    }),
+
+  reverify: authedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx: { db }, input: { id } }) => {
+      return await db.patient.update({
+        where: { id },
+        data: {
+          isBlocked: false,
+          currentCycleVisits: 0,
+        },
+      });
+    }),
+
 });

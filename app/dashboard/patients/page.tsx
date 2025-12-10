@@ -111,6 +111,22 @@ export default function PatientsPage() {
     },
   });
 
+  // --------- ADDED THE FOLLOWING ---------- 
+  const recordVisit = api.patient.recordVisit.useMutation({
+    onSuccess: () => {
+      refetch();
+    },
+    onError: (error) => {
+      alert(error.message); 
+    },
+  });
+
+  const reverify = api.patient.reverify.useMutation({
+    onSuccess: () => {
+      refetch();
+    },
+  });
+  // --------------------------------------------------
   const resetForm = () => {
     setFormData({
       id: "",
@@ -571,6 +587,9 @@ export default function PatientsPage() {
                     <TableRow>
                       <TableHead>Patient Info</TableHead>
                       <TableHead>Contact</TableHead>
+                      {/* --- ADDED THIS LINE --- */}
+                      <TableHead>Visit Status</TableHead>
+                      {/* ----------------------- */}
                       <TableHead>Last Visit</TableHead>
                       <TableHead>Comments</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -607,6 +626,24 @@ export default function PatientsPage() {
                             </div>
                           </div>
                         </TableCell>
+                        {/* --- ADDED THIS LINE --- */}
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            {patient.isBlocked ? (
+                              <Badge variant="destructive" className="w-fit">
+                                BLOCKED
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="w-fit bg-green-50 text-green-700 border-green-200">
+                                Active
+                              </Badge>
+                            )}
+                            <span className="text-xs text-gray-500">
+                              Cycle Visits: <strong>{patient.currentCycleVisits} / 6</strong>
+                            </span>
+                          </div>
+                        </TableCell>
+                        {/* ----------------------- */}
                         <TableCell>
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 text-sm">
@@ -631,7 +668,7 @@ export default function PatientsPage() {
                             {patient.comments}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
+                        {/* <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button
                               variant="outline"
@@ -671,7 +708,68 @@ export default function PatientsPage() {
                               </AlertDialogContent>
                             </AlertDialog>
                           </div>
+                        </TableCell> */}
+                        {/* --- ADDED THIS LINE --- */}
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {patient.isBlocked ? (
+                              <Button 
+                                size="sm" 
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                onClick={() => {
+                                  if(confirm("Confirm that you have verified patient documents?")) {
+                                    reverify.mutate({ id: patient.id });
+                                  }
+                                }}
+                                disabled={reverify.isPending}
+                              >
+                                {reverify.isPending ? "Verifying..." : "Verify"}
+                              </Button>
+                            ) : (
+                              <Button 
+                                size="sm" 
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => recordVisit.mutate({ id: patient.id })}
+                                disabled={recordVisit.isPending}
+                              >
+                                {recordVisit.isPending ? "..." : "Check In"}
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditPatient(patient)}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Patient</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete {patient.name}? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeletePatient(patient.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </TableCell>
+                        {/* --------------------- */}
                       </TableRow>
                     ))}
                   </TableBody>

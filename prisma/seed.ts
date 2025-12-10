@@ -13,6 +13,8 @@ const mockPatients: Patient[] = [
     dateLastVisited: new Date("2025-07-28"),
     comments:
       "Regular checkup completed. Blood pressure normal. Next visit in 3 months.",
+    isBlocked: false,
+    currentCycleVisits: 0,
   },
   {
     id: "9781108733755",
@@ -24,6 +26,8 @@ const mockPatients: Patient[] = [
     dateLastVisited: new Date("2024-01-10"),
     comments:
       "Diabetes follow-up. Medication adjusted. Diet counseling provided.",
+    isBlocked: false,
+    currentCycleVisits: 0,
   },
   {
     id: "PAT003",
@@ -35,6 +39,8 @@ const mockPatients: Patient[] = [
     dateLastVisited: new Date("2024-01-08"),
     comments:
       "First visit. General health screening completed. All vitals normal.",
+    isBlocked: false,
+    currentCycleVisits: 0,
   },
   {
     id: "PAT004",
@@ -46,6 +52,8 @@ const mockPatients: Patient[] = [
     dateLastVisited: new Date("2024-01-12"),
     comments:
       "Hypertension management. Prescribed new medication. Follow-up in 2 weeks.",
+    isBlocked: false,
+    currentCycleVisits: 0,
   },
   {
     id: "PAT005",
@@ -56,6 +64,8 @@ const mockPatients: Patient[] = [
     cnic: "42501-9999999-5",
     dateLastVisited: new Date("2024-01-14"),
     comments: "Routine vaccination completed. Health education provided.",
+    isBlocked: false,
+    currentCycleVisits: 0,
   },
 ];
 
